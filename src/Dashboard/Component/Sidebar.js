@@ -1,6 +1,6 @@
 import Logo from '../../assets/img/sppl_logo.png';
 import { AiOutlineDashboard, AiOutlineUserAdd } from "react-icons/ai";
-import { MdElectricalServices } from "react-icons/md";
+import { MdElectricalServices, MdPayment, MdOutlineLogout } from "react-icons/md";
 import { RiInstallLine } from "react-icons/ri";
 import { NavLink } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
@@ -53,7 +53,12 @@ export default function Sidebar() {
                 <li className="list-group-item"><NavLink to={"/admin/user"}><AiOutlineUserAdd /> User</NavLink></li>
                 : null
             }
-            <li className="list-group-item" ><a><span onClick={logout}><AiOutlineUserAdd /> Logout</span></a></li>
+            {
+              userRoleValue === "main-admin" ?
+                <li className="list-group-item"><NavLink to={"/admin/payment"}><MdPayment /> Payment</NavLink></li>
+                : null
+            }
+            <li  onClick={logout} className="list-group-item" ><a><span ><MdOutlineLogout /> Logout</span></a></li>
           </ul>
 
         </div>

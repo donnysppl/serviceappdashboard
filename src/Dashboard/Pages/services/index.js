@@ -5,10 +5,11 @@ import { NavLink } from 'react-router-dom';
 import Common from '../../Common';
 
 import { CSVLink } from "react-csv";
+import moment from 'moment';
 
 export default function Index() {
 
-  const { tokenValue, nodeurl } = Common();
+  const { tokenValue, nodeurl, userBrandValue } = Common();
 
   const [search, setsearch] = useState('');
   const [servList, setservList] = useState();
@@ -17,17 +18,13 @@ export default function Index() {
   const [dataFilter, setdataFilter] = useState([]);
   const [excelDataArray, setexcelDataArray] = useState([]);
 
-
-
-  // const i = useRef(true);
+  const i = useRef(true);
   useEffect(() => {
-    // if(i.current){
-    //     i.current = false;
+    if (i.current) {
+      i.current = false;
+      servData();
 
-    servData();
-
-
-    // }
+    }
   }, [])
 
   useEffect(() => {
@@ -36,6 +33,9 @@ export default function Index() {
     });
 
     setdataFilter(result);
+
+
+
   }, [search])
 
   const servData = async (e) => {
@@ -89,9 +89,7 @@ export default function Index() {
         'Serial No': res[i].set_serialno,
         'Warranty Type': res[i].warranty,
         'Query': res[i].query,
-
       }
-
     }
     setexcelDataArray(excelData);
 
@@ -102,45 +100,54 @@ export default function Index() {
       name: '#',
       selector: (row, index) => index + 1,
       cellExport: (row, index) => index + 1,
+      width: '60px',
     },
     {
       name: 'Complaint Type',
       selector: row => (row.complaint_type),
       cellExport: row => (row.complaint_type),
-      width: 200,
+      width: '160px',
     },
     {
       name: 'Brand',
       selector: row => (row.brand),
       cellExport: row => (row.brand),
-      width: 200,
+      width: '160px',
     },
     {
       name: 'Product Name',
       selector: row => (row.productname),
       cellExport: row => (row.productname),
-      width: 200,
+      width: '160px',
     },
     {
       name: 'Customer Name',
       selector: row => (row.firstname + " " + row.lastname),
       cellExport: row => (row.firstname + " " + row.lastname),
-      width: 200,
+      width: '160px',
     },
     {
       name: 'Customer Email',
       selector: row => (row.email),
       cellExport: row => (row.email),
-      width: 200,
+      width: '160px',
     },
     {
       name: 'Action',
-      cell: (row) => <button onClick={() => console.log(row._id)} className='btn btn-primary py-1 px-2 table-btn'>
-        <NavLink to={`/admin/services/${row._id}`}>Edit</NavLink>
-      </button>
+      cell: (row) => <>
+        <div className="status new me-2">
+          <span>New</span>
+        </div>
+        <div className="status complete me-2">
+          <span>Status</span>
+        </div>
+
+        <button onClick={() => console.log(row._id)} className='btn btn-primary py-1 px-2 table-btn'>
+          <NavLink to={`/admin/services/${row._id}`}>Edit</NavLink>
+        </button>
+      </>
     }
   ];
-
 
   createTheme('solarized', {
     text: {
@@ -181,6 +188,31 @@ export default function Index() {
 
   };
 
+  const filterbyDateHandle = (e) => {
+    let today = new Date();
+    let yesterday = moment(today).subtract(1, 'day').toDate();
+
+    let todayDate = moment(today).format('YYYY-MM-DD');
+    let prevDate = moment(yesterday).format('YYYY-MM-DD');
+
+    const value = e.target.value;
+    if (value === "today") {
+      let data = [];
+      data = servList;
+      const result = data.filter(data => moment(data.createdAt).format('YYYY-MM-DD') === todayDate);
+      setservList(result);
+    }
+    else if (value === "yesterday") {
+      let data = [];
+      data = servList;
+      const result = data.filter(data => moment(data.createdAt).format('YYYY-MM-DD') === prevDate);
+      setservList(result);
+    }
+    else if (value === "all") {
+      setservList(dataReverse);
+    }
+  }
+
   return (
     <>
       <section>
@@ -188,18 +220,16 @@ export default function Index() {
           <div className="row">
             <div className="col-lg-12">
               <div className="wrapper-bg common-bg p-4 rounded-2 position-relative">
-
                 <h3 className='fw-semibold'>Services Request</h3>
                 <div className="table-part table-responsive">
                   <DataTable theme="solarized" customStyles={customStyles}
-                    data={dataFilter} progressPending={loader}
+                    data={servList} progressPending={loader}
                     columns={columns}
                     pagination highlightOnHover subHeader
                     subHeaderComponent={
                       <div className='w-100 list-heading-part pb-3'>
                         <div>
                           {
-                            // console.log(excelDataArray)
                             excelDataArray.length ?
                               <CSVLink data={excelDataArray} target="_blank" ><button className='btn btn-primary'>Export Excel</button></CSVLink> : 'Loading'
                           }
@@ -208,8 +238,13 @@ export default function Index() {
                           <input type="text" placeholder='Search' className='form-control'
                             value={search} onChange={(e) => setsearch(e.target.value)} />
                         </div>
-
-
+                        <div className="filter-date">
+                          <select className="form-select" defaultValue={'all'} onChange={(e) => filterbyDateHandle(e)}>
+                            <option value="today">Today</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="all">All</option>
+                          </select>
+                        </div>
                       </div>
                     } />
 

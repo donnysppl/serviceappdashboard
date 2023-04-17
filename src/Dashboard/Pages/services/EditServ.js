@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom'
 import Common from '../../Common';
 import Swal from 'sweetalert2';
+import { useRef } from 'react';
+import Loader from '../../../Loader';
 
 export default function Edit() {
 
@@ -17,15 +19,29 @@ export default function Edit() {
   const [total, settotal] = useState(0);
 
   const [paymentTb, setpaymentTb] = useState(null);
-  const [payCon, setpayCon] = useState(false);
 
   const [userid, setuserid] = useState();
   const [paymentId, setpaymentId] = useState();
 
-  useEffect(() => {
-    servData();
-  }, [])
+  const [totalPayAmt, settotalPayAmt] = useState();
 
+  const [paymentList, setpaymentList] = useState(null);
+
+  const [invoiceUrl, setinvoiceUrl] = useState();
+  const [issueImg, setissueImg] = useState();
+
+  const [loader, setloader] = useState(true);
+  const [paymentStatus, setpaymentStatus] = useState(false);
+
+  const i = useRef(true);
+  useEffect(() => {
+    if (i.current) {
+      i.current = false;
+      servData();
+    }
+
+
+  }, [])
 
   const servData = async () => {
     await fetch(nodeurl + 'admins/servicedetail/' + id, {
@@ -40,12 +56,25 @@ export default function Edit() {
           setservDetail(res.result);
           setwarrType(res.result.warranty);
           setpaymentTb(res.result && res.result.payment_details)
-          setuserid(res.result.userId)
-          if(!res.result.payment_details){
+          setuserid(res.result.userId);
+
+          setloader(false);
+
+          if (res.result.invoice.length >= 1) {
+            setinvoiceUrl(res.result && res.result.invoice[0].path);
+          }
+          if (res.result.issue_image) {
+            setissueImg(res.result && res.result.issue_image)
+          }
+
+
+
+          if (res.result.payment_details.length === 0) {
             setpaymentId(null);
           }
-          else{
-            setpaymentId(res.result.payment_details[0].payment_detailid)
+          else {
+            setpaymentId(res.result.payment_details[0].payment_detailid);
+            paymentDetail(res.result.payment_details[0].payment_detailid);
           }
         }
 
@@ -55,9 +84,6 @@ export default function Edit() {
 
       })
   }
-
-  const invoiceUrl = servDetail && servDetail.invoice[0].path;
-  const issueImg = servDetail && servDetail.issue_image;
 
   const addPayOptHandle = () => {
     if (paymentTb && paymentTb.length === 1) {
@@ -99,7 +125,7 @@ export default function Edit() {
     console.log(priceData)
 
     const paymentDataSubmit = async () => {
-      await fetch(nodeurl + 'admins/paymentdetail/' + id, {
+      await fetch(nodeurl + 'admins/paymentupdate/' + id, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `bearer ${tokenValue}` },
         body: JSON.stringify({
@@ -130,7 +156,7 @@ export default function Edit() {
       if (result.isConfirmed) {
         paymentDataSubmit();
         Swal.fire('Saved!', '', 'success');
-        window.location.reload();
+        setInterval(windowReload, 3000);
       }
       else if (result.isDenied) {
         Swal.fire('Changes are not saved', '', 'info')
@@ -148,14 +174,15 @@ export default function Edit() {
       const thisClicked = e.currentTarget;
       thisClicked.innerText = "Deleting";
 
-      fetch(nodeurl + `paymentdelete/${paymentId}`, {
-        method: 'DELETE',
+      fetch(nodeurl + `admins/paymentdelete/${paymentId}`, {
+        method: 'POST',
       })
         .then((res) => {
-          console.log(res);
+          // console.log(res);
           if (res.status === 200) {
             alert("Success Deleted");
             thisClicked.closest("tr").remove();
+            setInterval(windowReload, 3000);
           }
           else if (res.status === 404) {
             alert("Error");
@@ -168,7 +195,50 @@ export default function Edit() {
     }
   }
 
+  const paymentDetail = async (res) => {
 
+    await fetch(nodeurl + `admins/paymentdetail/${res}`, {
+      method: 'GET',
+    }).then((res) => res.json())
+      .then((res) => {
+        console.log(res);
+        if (res.status === 200) {
+          console.log('Success')
+          setpaymentList(res && res.result);
+          totalAmt(res.result.payments);
+
+          if (res.result.status === "payment completed") {
+            console.log(res.result.status === "payment completed")
+            setpaymentStatus(true);
+          }
+          else {
+            setpaymentStatus(false);
+          }
+
+        }
+        else if (res.status === 400) {
+          alert('Somthing went wrong')
+        }
+
+      })
+  }
+
+  const totalAmt = (res) => {
+    let price = 0;
+    let data = res;
+    let datalength = data.length;
+
+    for (let i = 0; i < datalength; i++) {
+      price = price + parseInt(data[i].price);
+
+    }
+    settotalPayAmt(price);
+    return price
+  }
+
+  function windowReload() {
+    window.location.reload();
+  }
 
 
 
@@ -180,6 +250,8 @@ export default function Edit() {
             <div className="wrapper-bg common-bg p-4 rounded-2 position-relative mt-5">
               <h2>Service Detail</h2>
               <hr />
+
+              {loader ? <Loader /> : null}
 
               <div className="service-data-part row">
                 <div className="services-details-part pb-3 ps2"> <h5>Customer Person Details</h5>
@@ -210,11 +282,21 @@ export default function Edit() {
                   <hr />
                   <div className="invoice-part">
                     <h4 className='mb-3'>Product Invoice and Error Images</h4>
-                    <h6>Product Invoice : <a className='btn btn-primary btn-sm' href={`${nodeurl}${invoiceUrl}`} download>Click Here</a></h6>
+                    <h6>Product Invoice : {invoiceUrl ?
+                      <a className='btn btn-primary btn-sm' href={`${nodeurl}${invoiceUrl}`} download>Click Here</a>
+                      : null}
+                    </h6>
 
                     {
                       warrType === 'Extended Warranty' ?
-                        <h6>Extended Warranty Invoice : <a className='btn btn-primary btn-sm' href={`${nodeurl}${servDetail && servDetail.under_warranty[0].path}`} download>Click Here</a></h6>
+                        <h6>Extended Warranty Invoice :
+                          {
+                            servDetail.under_warranty >= 1 ?
+                              <a className='btn btn-primary btn-sm' href={`${nodeurl}${servDetail && servDetail.under_warranty[0].path}`} download>Click Here</a>
+                              : "Not Found"
+                          }
+
+                        </h6>
                         : null
                     }
                     <h6>Issue Images : </h6>
@@ -287,7 +369,7 @@ export default function Edit() {
 
                       <div className="button-section">
                         {
-                          formValues.length != 6 ?
+                          formValues.length !== 6 ?
                             <button className="btn btn-primary add me-3" type="button" onClick={() => addFormFields()}>Add</button>
                             : null
                         }
@@ -303,40 +385,51 @@ export default function Edit() {
           : null
       }
 
-      <section>
-        <div className="container">
-          <div className="row">
-            <div className="col-lg-12">
-              <div className="wrapper-bg common-bg p-4 rounded-2 position-relative mt-5 payment-list">
-                <h3 className='pt-3 pb-2'>Payment Data Exist</h3>
-                <table className="table text-white mt-2">
-                  <thead className="table-dark">
-                    <tr>
-                      <th>Payment Data</th>
-                      <th>Opt</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {
-                      paymentTb && paymentTb.map((item, index) => {
-                        return (
-                          <tr key={index}>
-                            <td>{item.payment_detailid}</td>
-                            <td>
-                              <button className='btn btn-primary ' onClick={(e) => deletePayDetail(e)} >Delete</button>
-                            </td>
-                          </tr>
-                        )
-                      })
-                    }
 
-                  </tbody>
-                </table>
+      {
+        paymentList ?
+          <section>
+            <div className="container">
+              <div className="row">
+                <div className="col-lg-12">
+                  <div className="wrapper-bg common-bg p-4 rounded-2 position-relative mt-5 payment-list">
+                    <h3 className='pt-3 pb-2'>Payment Data Exist</h3>
+                    <table className="table text-white mt-2">
+                      <thead className="table-dark">
+                        <tr>
+                          <td>User name</td>
+                          <td>User email</td>
+                          <th>Status</th>
+                          <th>Total Amount</th>
+
+                          {!paymentStatus ? <td>
+                            <th>Opt</th>
+                          </td> : null}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr >
+                          <td>{paymentList.name}</td>
+                          <td>{paymentList.email}</td>
+                          <td>{paymentList.status}</td>
+                          <td>{totalPayAmt && totalPayAmt}</td>
+
+                          {!paymentStatus ? <td>
+                            <button className='btn btn-primary ' onClick={(e) => deletePayDetail(e)} >Delete</button>
+                          </td> : null}
+
+                        </tr>
+
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
+
+          : null}
+
 
     </>
   )

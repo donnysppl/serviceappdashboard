@@ -1,47 +1,34 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import jwt_decode from "jwt-decode";
 
 export default function Common() {
 
-  const navigate = useNavigate();
-  const [token ,setToken] = useState();
+  const [token, setToken] = useState(null);
+  const [userRole, setuserRole] = useState(null);
+  const [userBrand, setuserBrand] = useState(null);
 
-  // const nodeurl = 'http://192.168.0.167:5000/';
+  // const nodeurl = 'http://192.168.0.107:5000/';
   const nodeurl = 'https://backend-for-app-code.onrender.com/';
+  // const nodeurl = 'https://shopsppl.net/';
 
-  const saveToken = (token) => {
-    const expireTime = new Date().setDate(new Date().getDate() + 30);
 
-    // creating session storage when user login
-    localStorage.setItem('token', JSON.stringify({
-      value : token,
-    }));
+  useEffect(() => {
+    let token = window.localStorage.getItem("token");
+    if (token) {
+      setToken(token);
+      const decoded = jwt_decode(window.localStorage.getItem("token"));
+      setuserRole(decoded.role);
+      setuserBrand(decoded.brand);
+    }
 
-    setToken(token);
+  }, []);
 
-    // navigate after user login to dashboard
-    navigate('/admin');
-  }
-
-  // const servDash = (res) => {
-  //   const data = res;
-
-  //   console.log(data)
-  // }
-
-  
-
-  if(localStorage.getItem("token")){
-    const tokenData = JSON.parse(localStorage.getItem("token"));
-    var tokenValue = tokenData.value;
-  }
-  const decoded = jwt_decode(tokenValue);
-  const userRoleValue = decoded.role;
-  // const userRoleValue = "services-admin";
+  const tokenValue = window.localStorage.getItem("token") || token;
+  const userRoleValue = userRole || 'main-admin';
+  const userBrandValue = userBrand;
 
   return {
-    nodeurl, tokenValue , setToken : saveToken, userRoleValue
+    nodeurl, tokenValue, userRoleValue, userBrandValue
   }
 }
 

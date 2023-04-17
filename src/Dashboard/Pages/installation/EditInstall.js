@@ -2,41 +2,72 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom'
 import Common from '../../Common';
 import Swal from 'sweetalert2';
+import { useRef } from 'react';
+import Loader from '../../../Loader';
 
-export default function EditInstall() {
+export default function Edit() {
 
   const { nodeurl, tokenValue } = Common();
 
   const { id } = useParams();
 
   const [servDetail, setservDetail] = useState();
-  const [warrType, setwarrType] = useState();
+  // const [warrType, setwarrType] = useState();
 
   const [addPayOpt, setaddPayOpt] = useState(false);
   const [formValues, setFormValues] = useState([{ name: "", price: "" }]);
   const [total, settotal] = useState(0);
 
   const [paymentTb, setpaymentTb] = useState(null);
-  const [payCon, setpayCon] = useState(false);
+  const [paymentStatus, setpaymentStatus] = useState(false);
 
+  const [userid, setuserid] = useState();
+  const [paymentId, setpaymentId] = useState();
+
+  const [invoiceUrl, setinvoiceUrl] = useState();
+
+  const [totalPayAmt, settotalPayAmt] = useState();
+
+  const [paymentList, setpaymentList] = useState(null);
+
+  const [loader, setloader] = useState(true);
+
+  const i = useRef(true);
   useEffect(() => {
-    servData();
-  }, [])
+    if (i.current) {
+      i.current = false;
+      servData();
+    }
 
+
+  }, [])
 
   const servData = async () => {
     await fetch(nodeurl + 'admins/servicedetail/' + id, {
       method: 'GET',
     }).then((res) => res.json())
       .then((res) => {
-        // console.log(res);
+        console.log(res);
         // console.log(res.result.payment_details)
 
         if (res.status === 200) {
           // console.log("Sucess");
           setservDetail(res.result);
-          setwarrType(res.result.warranty);
           setpaymentTb(res.result && res.result.payment_details)
+          setuserid(res.result.userId);
+
+          setloader(false);
+          if(res.result.invoice.length >= 1){
+            setinvoiceUrl(res.result.invoice);
+          }
+
+          if (res.result.payment_details.length === 0) {
+            setpaymentId(null);
+          }
+          else {
+            setpaymentId(res.result.payment_details[0].payment_detailid);
+            paymentDetail(res.result.payment_details[0].payment_detailid);
+          }
         }
 
         else if (res.status === 400) {
@@ -46,18 +77,15 @@ export default function EditInstall() {
       })
   }
 
-  const invoiceUrl = servDetail && servDetail.invoice[0].path;
-  const issueImg = servDetail && servDetail.issue_image;
-  
   const addPayOptHandle = () => {
-    if(paymentTb && paymentTb.length === 1){
+    if (paymentTb && paymentTb.length === 1) {
       Swal.fire({
         icon: 'error',
         title: 'Oops...',
         text: 'Payment Detail already Exist. If you want to change the details than delete the previous data and then create the new payment',
       });
     }
-    else{
+    else {
       setaddPayOpt(!addPayOpt);
     }
   }
@@ -88,29 +116,26 @@ export default function EditInstall() {
     settotal(priceData);
     console.log(priceData)
 
-
     const paymentDataSubmit = async () => {
-      await fetch(nodeurl + 'admins/paymentdetail/' + id, {
+      await fetch(nodeurl + 'admins/paymentupdate/' + id, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `bearer ${tokenValue}` },
-        body: JSON.stringify(formValues),
+        body: JSON.stringify({
+          formValues, userid
+        }),
       }).then((res) => res.json())
         .then((res) => {
           console.log(res);
           if (res.status === 200) {
             console.log('Success')
           }
-          if (res.status === 400) {
+          else if (res.status === 400) {
             console.log('Somthing went wrong')
           }
 
         })
     }
 
-
-
-
-    // alert(JSON.stringify(formValues));
     Swal.fire({
       icon: 'warning',
       color: '#000',
@@ -123,7 +148,7 @@ export default function EditInstall() {
       if (result.isConfirmed) {
         paymentDataSubmit();
         Swal.fire('Saved!', '', 'success');
-        window.location.reload();
+        setInterval(windowReload, 3000);
       }
       else if (result.isDenied) {
         Swal.fire('Changes are not saved', '', 'info')
@@ -132,10 +157,80 @@ export default function EditInstall() {
 
   }
 
-  // console.log(payCon)
+  const deletePayDetail = (e) => {
+    e.preventDefault();
+
+    console.log(nodeurl + `paymentdelete/${paymentId}`)
+
+    if (window.confirm("Are you really want to delete the Payment")) {
+      const thisClicked = e.currentTarget;
+      thisClicked.innerText = "Deleting";
+
+      fetch(nodeurl + `admins/paymentdelete/${paymentId}`, {
+        method: 'POST',
+      })
+        .then((res) => {
+          // console.log(res);
+          if (res.status === 200) {
+            alert("Success Deleted");
+            thisClicked.closest("tr").remove();
+            setInterval(windowReload, 3000);
+          }
+          else if (res.status === 404) {
+            alert("Error");
+            // window.location.reload();
+            console.log(res)
+          }
+        })
 
 
+    }
+  }
 
+  const paymentDetail = async (res) => {
+
+    await fetch(nodeurl + `admins/paymentdetail/${res}`, {
+      method: 'GET',
+    }).then((res) => res.json())
+      .then((res) => {
+        console.log(res);
+        if (res.status === 200) {
+          console.log('Success')
+          setpaymentList(res && res.result);
+          totalAmt(res.result.payments);
+
+          if(res.result.status === "payment completed"){
+            console.log(res.result.status === "payment completed")
+            setpaymentStatus(true);
+          }
+          else{
+            setpaymentStatus(false);
+          }
+
+        }
+        else if (res.status === 400) {
+          alert('Somthing went wrong')
+        }
+
+      })
+  }
+
+  const totalAmt = (res) => {
+    let price = 0;
+    let data = res;
+    let datalength = data.length;
+
+    for (let i = 0; i < datalength; i++) {
+      price = price + parseInt(data[i].price);
+
+    }
+    settotalPayAmt(price);
+    return price
+  }
+
+  function windowReload() {
+    window.location.reload();
+  }
 
   return (
     <>
@@ -145,6 +240,8 @@ export default function EditInstall() {
             <div className="wrapper-bg common-bg p-4 rounded-2 position-relative mt-5">
               <h2>Installation Detail</h2>
               <hr />
+
+              {loader ? <Loader /> : null}
 
               <div className="service-data-part row">
                 <div className="services-details-part pb-3 ps2"> <h5>Customer Person Details</h5>
@@ -175,8 +272,7 @@ export default function EditInstall() {
                   <hr />
                   <div className="invoice-part">
                     <h4 className='mb-3'>Product Invoice</h4>
-                    <h6>Product Invoice : <a className='btn btn-primary btn-sm' href={`${nodeurl}${invoiceUrl}`} download>Click Here</a></h6>
-
+                    <h6>Product Invoice : {invoiceUrl ? <a className='btn btn-primary btn-sm' href={`${nodeurl}${invoiceUrl}`} download>Click Here</a> : "Bill Not Found"} </h6>
                   </div>
                 </div>
               </div>
@@ -236,7 +332,7 @@ export default function EditInstall() {
 
                       <div className="button-section">
                         {
-                          formValues.length != 6 ?
+                          formValues.length !== 6 ?
                             <button className="btn btn-primary add me-3" type="button" onClick={() => addFormFields()}>Add</button>
                             : null
                         }
@@ -252,40 +348,48 @@ export default function EditInstall() {
           : null
       }
 
-      <section>
-        <div className="container">
-          <div className="row">
-            <div className="col-lg-12">
-              <div className="wrapper-bg common-bg p-4 rounded-2 position-relative mt-5 payment-list">
-                <h3 className='pt-3 pb-2'>Payment Data Exist</h3>
-                <table className="table text-white mt-2">
-                  <thead className="table-dark">
-                    <tr>
-                      <th>Payment Data</th>
-                      <th>Opt</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {
-                      paymentTb && paymentTb.map((item, index) => {
-                        return (
-                          <tr key={index}>
-                            <td>{item.payment_detailid}</td>
-                            <td>
-                              <button className='btn btn-primary '>Delete</button>
-                            </td>
-                          </tr>
-                        )
-                      })
-                    }
 
-                  </tbody>
-                </table>
+      {
+        paymentList ?
+          <section>
+            <div className="container">
+              <div className="row">
+                <div className="col-lg-12">
+                  <div className="wrapper-bg common-bg p-4 rounded-2 position-relative mt-5 payment-list">
+                    <h3 className='pt-3 pb-2'>Payment Data Exist</h3>
+                    <table className="table text-white mt-2">
+                      <thead className="table-dark">
+                        <tr>
+                          <td>User name</td>
+                          <td>User email</td>
+                          <th>Status</th>
+                          <th>Total Amount</th>
+                          {!paymentStatus ? <td>
+                            <th>Opt</th>
+                          </td> : null}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr >
+                          <td>{paymentList.name}</td>
+                          <td>{paymentList.email}</td>
+                          <td>{paymentList.status}</td>
+                          <td>{totalPayAmt && totalPayAmt}</td>
+                          {!paymentStatus ? <td>
+                            <button className='btn btn-primary ' onClick={(e) => deletePayDetail(e)} >Delete</button>
+                          </td> : null}
+                        </tr>
+
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
+
+          : null}
+
 
     </>
   )

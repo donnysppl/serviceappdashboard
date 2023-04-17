@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Loader from '../Loader';
 import Logo from '../assets/img/sppl_logo.png';
 import Common from './Common';
 
 export default function Login() {
-  const { nodeurl, setToken, saveToken } = Common();
+  const { nodeurl } = Common();
 
   const [email, setemail] = useState();
   const [password, setpassword] = useState();
@@ -23,7 +23,7 @@ export default function Login() {
       body: JSON.stringify({ email: email, password: password }),
     };
 
-    
+    console.log({email: email, password: password})
 
     await fetch(nodeurl + 'admins/login', requestOptions).then((res) => res.json())
       .then((res) => {
@@ -31,10 +31,8 @@ export default function Login() {
 
         if (res.data.status === 200) {
           console.log("Sucess ");
-          setToken( res.data.token );
-          // console.log(res.data.token)
 
-          localStorage.setItem('token' , JSON.stringify({value : res.data.token }));
+          localStorage.setItem('token' , res.data.token );
           navigate('/admin');
           setloading(false);
         }

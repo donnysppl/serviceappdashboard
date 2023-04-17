@@ -20,6 +20,7 @@ import EditServ from './Dashboard/Pages/services/EditServ';
 import EditInstall from './Dashboard/Pages/installation/EditInstall';
 import AllUser from './Dashboard/Pages/user/AllUser';
 import Common from './Dashboard/Common';
+import Payment from './Dashboard/Pages/payment';
 
 function App() {
   const navigate = useNavigate();
@@ -31,13 +32,14 @@ function App() {
   const { tokenValue , userRoleValue } = Common();
 
   useEffect(() => {
-    tokenExpFnc();
+    // tokenExpFnc();
+
   }, [])
 
 
   const tokenExpFnc = () => {
     if (tokenValue) {
-      const decoded = jwt_decode(tokenValue);
+      const decoded = jwt_decode(tokenValue, { header: true });
       const startTokenTime = decoded.iat;
       const endTokenTime = decoded.exp;
       if (startTokenTime > endTokenTime) {
@@ -56,8 +58,9 @@ function App() {
 
   const userRole = () => {
     const decoded = jwt_decode(tokenValue);
-    const userRoleValue = decoded.role;
-    console.log(userRoleValue === "main-admin")
+    // const userRoleValue = decoded.role;
+    // const userRoleValue = "main-admin";
+    // console.log(userRoleValue === "main-admin")
 
     if (userRoleValue === "main-admin") {
       setmainAdmin(true);
@@ -105,18 +108,14 @@ function App() {
       <Routes>
         <Route path='/' exact element={<Login />} />
         <Route path='/admin' exact element={<MasterLayout />} >
-          {
-            mainAdmin && mainAdmin ?
-              <Route path='/admin/dashboard' exact element={<Dashboard />} /> :
-              <Route path='*' exact element={<Error />} />
 
-          }
-          {/* <Route path='/admin/dashboard' exact element={<Dashboard />} /> */}
+          <Route path='/admin/dashboard' exact element={<MainUser><Dashboard /></MainUser>} />
           <Route path='/admin/services' exact element={<ServiceUser><Services /></ServiceUser>} />
           <Route path='/admin/services/:id' exact element={<ServiceUser><EditServ /></ServiceUser>} />
           <Route path='/admin/installation' exact element={<InstallUser><Installation /></InstallUser>} />
           <Route path='/admin/installation/:id' exact element={<InstallUser><EditInstall /></InstallUser>} />
           <Route path='/admin/user' exact element={<MainUser><AllUser /></MainUser>} />
+          <Route path='/admin/payment' exact element={<MainUser><Payment /></MainUser>} />
           <Route
             path="/admin"
             element={<Navigate to="/admin/dashboard" />}

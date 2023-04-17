@@ -16,6 +16,8 @@ export default function AllUser() {
 
     const { tokenValue, nodeurl } = Common();
 
+    // console.log(tokenValue)
+
     const allUserData = async (e) => {
         setloader(true);
 
@@ -27,7 +29,7 @@ export default function AllUser() {
         //   console.log(tokenValue)
         await fetch(nodeurl + 'admins/list', requestOptions).then((res) => res.json())
             .then((res) => {
-                console.log(res);
+                // console.log(res);
 
                 if (res.status === 200) {
 
@@ -83,6 +85,7 @@ export default function AllUser() {
         email: '',
         password: '',
         usertype: '',
+        brand:'',
     })
 
     const handleInput = (e) => {
@@ -106,7 +109,7 @@ export default function AllUser() {
                 console.log(res);
                 setloader(false)
 
-                if (res.data.status === 200) {
+                if (res.status === 200) {
                     alert("Sucess")
                 }
 
@@ -203,6 +206,20 @@ export default function AllUser() {
                                         <option value="main-admin">Main Admin</option>
                                         <option value="services-admin">Services Admin</option>
                                         <option value="installation-admin">Installation Admin</option>
+                                    </select>
+                                </div>
+                                <div className="mb-4">
+                                    <label htmlFor="brand" className="form-label">Brand Type</label>
+                                    <select className="form-select" name="brand"
+                                        onChange={handleInput} value={addUserInput.brand} >
+                                        {/* // onChange={(e) => setusertype(e.target.value)}> */}
+
+                                        <option >Choose Your User Brand</option>
+                                        <option value="Thomson">Thomson</option>
+                                        <option value="Kodak">Kodak</option>
+                                        <option value="Blaupunkt">Blaupunkt</option>
+                                        <option value="White Westinghouse">White Westinghouse</option>
+                                        <option value="Westinghousetv">Westinghousetv</option>
                                     </select>
                                 </div>
 
