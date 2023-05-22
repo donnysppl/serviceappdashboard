@@ -5,6 +5,7 @@ import { RiInstallLine } from "react-icons/ri";
 import { NavLink } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import Common from '../Common';
+import { MdMiscellaneousServices } from "react-icons/md";
 
 export default function Sidebar() {
 
@@ -22,8 +23,6 @@ export default function Sidebar() {
   return (
     <>
       <div className="sidebar-inner-div text-white">
-
-
 
         <div className="logo-part d-flex align-items-center gap-3">
           <img src={Logo} alt="Logo" className="img-fluid w-50" />
@@ -55,9 +54,15 @@ export default function Sidebar() {
             }
             {
               userRoleValue === "main-admin" ?
+                <li className="list-group-item"><NavLink to={"/admin/user-record"}><AiOutlineUserAdd /> User Record</NavLink></li>
+                : null
+            }
+            {
+              userRoleValue === "main-admin" ?
                 <li className="list-group-item"><NavLink to={"/admin/payment"}><MdPayment /> Payment</NavLink></li>
                 : null
             }
+            <li className="list-group-item"><NavLink to={"/admin/warranty"}><MdMiscellaneousServices /> Warranty</NavLink></li>
             <li  onClick={logout} className="list-group-item" ><a><span ><MdOutlineLogout /> Logout</span></a></li>
           </ul>
 

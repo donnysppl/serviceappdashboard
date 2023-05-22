@@ -2,13 +2,25 @@ import { useEffect, useState } from 'react'
 import Loader from '../../../Loader';
 import Common from '../../Common';
 import DataTable, { createTheme } from 'react-data-table-component';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useParams } from 'react-router-dom';
+import { AiOutlineEyeInvisible, AiOutlineEye } from "react-icons/ai";
+import Swal from 'sweetalert2';
 
-export default function AllUser() {
-    const [loader, setloader] = useState(false)
+export default function EditUser() {
 
-    const [allUser, setallUser] = useState();
+    const { id } = useParams();
 
+    const [loader, setloader] = useState(true)
+    const [addUserInput, setaddUserInput] = useState({
+        name: '',
+        email: '',
+        password: '',
+        usertype: '',
+        brand: '',
+        status:'',
+    })
+
+    const [showPass, setshowPass] = useState(false);
 
     useEffect(() => {
 
@@ -19,24 +31,20 @@ export default function AllUser() {
     const { tokenValue, nodeurl, userRoleValue } = Common();
 
     const allUserData = async (e) => {
-        setloader(true);
-
         const requestOptions = {
             method: 'GET',
             headers: { 'Content-Type': 'application/json', 'Authorization': `bearer ${tokenValue}` },
         };
 
         //   console.log(tokenValue)
-        await fetch(nodeurl + 'admins/list', requestOptions).then((res) => res.json())
+        await fetch(nodeurl + `admins/list/${id}`, requestOptions).then((res) => res.json())
             .then((res) => {
                 console.log(res);
+                setloader(false);
 
                 if (res.status === 200) {
-
-                    setallUser(res.result);
-
-                    setloader(false);
-
+                    setaddUserInput(res.result);
+                    
                 }
 
                 else if (res.status === 400) {
@@ -48,13 +56,7 @@ export default function AllUser() {
     }
 
 
-    const [addUserInput, setaddUserInput] = useState({
-        name: '',
-        email: '',
-        password: '',
-        usertype: '',
-        brand: '',
-    })
+
 
     const handleInput = (e) => {
         e.persist();
@@ -63,22 +65,34 @@ export default function AllUser() {
 
     const addUserForm = async (e) => {
         e.preventDefault();
-        setloader(true);
-        console.log(addUserInput)
+        // setloader(true);
+        const data = {
+            name: addUserInput.name,
+            email: addUserInput.email,
+            password: addUserInput.password,
+            usertype: addUserInput.usertype,
+            brand: addUserInput.brand,
+            status:  addUserInput.status,
+        }
 
         const requestOptions = {
-            method: 'POST',
+            method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `bearer ${tokenValue}` },
-            body: JSON.stringify(addUserInput),
+            body: JSON.stringify(data),
         };
 
-        await fetch(nodeurl + 'admins/add', requestOptions).then((res) => res.json())
+        await fetch(nodeurl + `admins/edit/${id}`, requestOptions).then((res) => res.json())
             .then((res) => {
                 console.log(res);
-                setloader(false)
 
                 if (res.status === 200) {
-                    alert("Sucess")
+                    Swal.fire(
+                        'Saved',
+                        `${res.message}`,
+                        'success'
+                    ).then(function(){
+                        window.location.reload();
+                    })
                 }
 
                 else if (res.status === 400) {
@@ -119,21 +133,12 @@ export default function AllUser() {
         {
             name: 'Action',
             cell: (row) => <>
-                <button onClick={() => console.log(row._id)} className='btn btn-primary py-1 px-2 me-2 table-btn'>
-                    <NavLink to={`/admin/user/${row._id}`}>Edit</NavLink>
+                <div className="status complete me-2">
+                    <span>Active</span>
+                </div>
+                <button onClick={() => console.log(row._id)} className='btn btn-primary py-1 px-2 table-btn'>
+                    <NavLink to={`/admin/services/${row._id}`}>Edit</NavLink>
                 </button>
-                {
-                    row.status === 'active' ?
-                        <div className="status complete">
-                            <span>Active</span>
-                        </div>
-                        : 
-                            <div className="status failed">
-                                <span>In Active</span>
-                            </div>
-                }
-
-
             </>
         }
     ];
@@ -180,26 +185,6 @@ export default function AllUser() {
     return (
         <>
 
-            <section>
-                <div className="container mt-5">
-                    <div className="row">
-                        <div className="col-lg-12">
-                            <div className="wrapper-bg common-bg p-4 rounded-2 position-relative">
-                                <h3 className='fw-semibold'>Admin User</h3>
-                                <div className="table-part table-responsive">
-                                    <DataTable theme="solarized" customStyles={customStyles}
-                                        data={allUser} progressPending={loader}
-                                        columns={columns}
-                                        pagination highlightOnHover subHeader
-                                    />
-
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
             <div className="container mt-3">
                 <div className="row">
                     <div className="col-lg-9 mx-auto">
@@ -208,31 +193,39 @@ export default function AllUser() {
                             {
                                 loader ? <Loader /> : null
                             }
-                            <h3 className='fw-semibold'>Create Dashboard User</h3>
+                            <h3 className='fw-semibold'>Edit Admin User</h3>
 
-                            <form className='mt-2' onSubmit={addUserForm}>
+                            <form className='mt-4' onSubmit={addUserForm}>
                                 <div className="mb-3">
                                     <label htmlFor="name" className="form-label">Name</label>
-                                    <input type="name" name="name" placeholder='name' className="form-control" id="name"
+                                    <input required type="name" name="name" placeholder='name' className="form-control" id="name"
                                         onChange={handleInput} value={addUserInput.name} />
                                     {/* // onChange={(e) => setname(e.target.value)}/> */}
                                 </div>
                                 <div className="mb-3">
                                     <label htmlFor="email" className="form-label">Email address</label>
-                                    <input type="email" name="email" placeholder='email' className="form-control" id="email"
+                                    <input required type="email" name="email" placeholder='email' className="form-control" id="email"
                                         onChange={handleInput} value={addUserInput.email} />
                                     {/* // onChange={(e) => setemail(e.target.value)}/> */}
                                 </div>
                                 <div className="mb-3">
                                     <label htmlFor="password" className="form-label">Password</label>
-                                    <input type="password" name="password" placeholder='password' className="form-control" id="password"
-                                        onChange={handleInput} value={addUserInput.password} />
+                                    <div className="position-relative">
+                                        <input required type={showPass ? "text" : "password"} name="password" placeholder='password' className="form-control" id="password"
+                                            onChange={handleInput}  />
+                                        <div className="password-icon" onClick={(e) => setshowPass(!showPass)}>
+                                            {
+                                                showPass ? <AiOutlineEyeInvisible /> : <AiOutlineEye />
+                                            }
+                                        </div>
+                                    </div>
+
                                     {/* onChange={(e) => setpassword(e.target.value)}/> */}
 
                                 </div>
                                 <div className="mb-4">
                                     <label htmlFor="usertype" className="form-label">User Type</label>
-                                    <select className="form-select" name="usertype"
+                                    <select className="form-select" name="usertype" required
                                         onChange={handleInput} value={addUserInput.usertype} >
                                         {/* // onChange={(e) => setusertype(e.target.value)}> */}
 
@@ -244,22 +237,33 @@ export default function AllUser() {
                                 </div>
                                 <div className="mb-4">
                                     <label htmlFor="brand" className="form-label">Brand Type</label>
-                                    <select className="form-select" name="brand"
+                                    <select className="form-select" name="brand" required
                                         onChange={handleInput} value={addUserInput.brand} >
                                         {/* // onChange={(e) => setusertype(e.target.value)}> */}
 
                                         <option >Choose Your User Brand</option>
                                         {
                                             userRoleValue === 'main-admin' ?
-                                                <option value="All">All</option> : null
+                                                <option value="all">All</option> : null
                                         }
-                                        <option value="Thomson">Thomson</option>
-                                        <option value="Kodak">Kodak</option>
-                                        <option value="Blaupunkt">Blaupunkt</option>
-                                        <option value="White Westinghouse">White Westinghouse</option>
-                                        <option value="Westinghousetv">Westinghousetv</option>
+                                        <option value="thomson">Thomson</option>
+                                        <option value="kodak">Kodak</option>
+                                        <option value="blaupunkt">Blaupunkt</option>
+                                        <option value="white westinghouse">White Westinghouse</option>
+                                        <option value="westinghousetv">Westinghousetv</option>
                                     </select>
                                 </div>
+
+                                <div className="mb-4">
+                                    <label htmlFor="status" className="form-label">Admin User Status</label>
+                                    <select className="form-select" name="status" required
+                                        onChange={handleInput} value={addUserInput.status} >
+                                        <option >Choose Your Admin User Status</option>
+                                        <option value="active">Active</option>
+                                        <option value="inactive">In Active</option>
+                                    </select>
+                                </div>
+
 
                                 <button type="submit" className="btn btn-primary">Submit</button>
                             </form>
@@ -267,8 +271,8 @@ export default function AllUser() {
 
 
                     </div>
-                </div>
-            </div>
+                </div >
+            </div >
         </>
     )
 }

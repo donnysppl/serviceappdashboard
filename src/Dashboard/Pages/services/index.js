@@ -9,10 +9,11 @@ import moment from 'moment';
 
 export default function Index() {
 
-  const { tokenValue, nodeurl, userBrandValue } = Common();
+  const { tokenValue, nodeurl, brand, todayDate, prevDate } = Common();
 
   const [search, setsearch] = useState('');
   const [servList, setservList] = useState();
+  const [servListfilter, setservListfilter] = useState();
   const [loader, setloader] = useState(true);
   const [dataReverse, setdataReverse] = useState();
   const [dataFilter, setdataFilter] = useState([]);
@@ -34,7 +35,7 @@ export default function Index() {
 
     setdataFilter(result);
 
-
+    // console.log(search)
 
   }, [search])
 
@@ -46,17 +47,15 @@ export default function Index() {
       headers: { 'Content-Type': 'application/json', 'Authorization': `bearer ${tokenValue}` },
     }
 
-    await fetch(nodeurl + 'admins/service', requestOptions).then((res) => res.json())
+    await fetch(nodeurl + `admins/service/${brand}`, requestOptions).then((res) => res.json())
       .then((res) => {
-        console.log(res);
+        // console.log(res);
 
         if (res.status === 200) {
           setservList(res.result && res.result.reverse());
           setloader(false);
           setdataReverse(res.result && res.result.reverse());
           setdataFilter(res.result && res.result.reverse());
-          excelDataLoop(res.result);
-
         }
 
         else if (res.status === 400) {
@@ -87,6 +86,7 @@ export default function Index() {
         'Product Name': res[i].productname,
         'Purchase Date': res[i].purchase_date,
         'Serial No': res[i].set_serialno,
+        'Status': res[i].status,
         'Warranty Type': res[i].warranty,
         'Query': res[i].query,
       }
@@ -133,15 +133,20 @@ export default function Index() {
       width: '160px',
     },
     {
+      name: 'Status',
+      selector: row => <>
+        <div className="text-center">
+          <div className={`status me-2 ${row.status}`}>
+            <span>{row.status === 'initial' ? 'New' : row.status}</span>
+          </div>
+        </div>
+      </>,
+      cellExport: row => (row.status),
+      width: '120px',
+    },
+    {
       name: 'Action',
       cell: (row) => <>
-        <div className="status new me-2">
-          <span>New</span>
-        </div>
-        <div className="status complete me-2">
-          <span>Status</span>
-        </div>
-
         <button onClick={() => console.log(row._id)} className='btn btn-primary py-1 px-2 table-btn'>
           <NavLink to={`/admin/services/${row._id}`}>Edit</NavLink>
         </button>
@@ -188,29 +193,33 @@ export default function Index() {
 
   };
 
-  const filterbyDateHandle = (e) => {
-    let today = new Date();
-    let yesterday = moment(today).subtract(1, 'day').toDate();
+  const filterHandle = (e) => {
+    setloader(true);
+    e.preventDefault();
+    const filterbyday = document.getElementById('filterbyday').value;
+    const filterbystatus = document.getElementById('filterbystatus').value;
 
-    let todayDate = moment(today).format('YYYY-MM-DD');
-    let prevDate = moment(yesterday).format('YYYY-MM-DD');
+    let data = [];
+    data = dataReverse;
+    const result = data.filter(data => {
+      if (filterbystatus === 'all' && filterbyday === 'all') {
+        return data;
+      }
+      else if (filterbystatus === 'all' && filterbyday !== 'all') {
+        return moment(data.createdAt).format('YYYY-MM-DD') === filterbyday;
+      }
+      else if (filterbystatus !== 'all' && filterbyday === 'all') {
+        return data.status === filterbystatus;
+      }
+      else if (filterbystatus !== 'all' && filterbyday !== 'all') {
+        return data.status === filterbystatus && moment(data.createdAt).format('YYYY-MM-DD') === filterbyday;
+      }
+    }
 
-    const value = e.target.value;
-    if (value === "today") {
-      let data = [];
-      data = servList;
-      const result = data.filter(data => moment(data.createdAt).format('YYYY-MM-DD') === todayDate);
-      setservList(result);
-    }
-    else if (value === "yesterday") {
-      let data = [];
-      data = servList;
-      const result = data.filter(data => moment(data.createdAt).format('YYYY-MM-DD') === prevDate);
-      setservList(result);
-    }
-    else if (value === "all") {
-      setservList(dataReverse);
-    }
+    );
+    setdataFilter(result);
+    excelDataLoop(result);
+    setloader(false);
   }
 
   return (
@@ -223,28 +232,43 @@ export default function Index() {
                 <h3 className='fw-semibold'>Services Request</h3>
                 <div className="table-part table-responsive">
                   <DataTable theme="solarized" customStyles={customStyles}
-                    data={servList} progressPending={loader}
+                    data={dataFilter} progressPending={loader}
                     columns={columns}
                     pagination highlightOnHover subHeader
                     subHeaderComponent={
                       <div className='w-100 list-heading-part pb-3'>
-                        <div>
+                        <div className='text-center'>
                           {
                             excelDataArray.length ?
-                              <CSVLink data={excelDataArray} target="_blank" ><button className='btn btn-primary'>Export Excel</button></CSVLink> : 'Loading'
+                              <CSVLink data={excelDataArray} target="_blank" ><button className='btn btn-primary'>Export Excel</button></CSVLink> : <span>Loading / Click Filter <br/>to Export</span>
                           }
                         </div>
                         <div>
+                          <label htmlFor="Search" className="form-label">Search</label>
                           <input type="text" placeholder='Search' className='form-control'
                             value={search} onChange={(e) => setsearch(e.target.value)} />
                         </div>
-                        <div className="filter-date">
-                          <select className="form-select" defaultValue={'all'} onChange={(e) => filterbyDateHandle(e)}>
-                            <option value="today">Today</option>
-                            <option value="yesterday">Yesterday</option>
-                            <option value="all">All</option>
-                          </select>
-                        </div>
+
+                        <form onSubmit={filterHandle} className='fliter-form'>
+                          <div className="filter-date">
+                            <label htmlFor="filterbyDay" className="form-label">Filter By Day</label>
+                            <select className="form-select" name='filterbyday' id='filterbyday' defaultValue={'all'} >
+                              <option value={todayDate}>Today</option>
+                              <option value={prevDate}>Yesterday</option>
+                              <option value="all">All</option>
+                            </select>
+                          </div>
+                          <div className="filter-status">
+                            <label htmlFor="filterbyStatus" className="form-label">Filter By Status</label>
+                            <select className="form-select" name='filterbystatus' id='filterbystatus' defaultValue={'all'} >
+                              <option value="all">All</option>
+                              <option value="initial">New</option>
+                              <option value="pending">Pending</option>
+                              <option value="complete">Complete</option>
+                            </select>
+                          </div>
+                          <button className='btn btn-primary'>Filter</button>
+                        </form>
                       </div>
                     } />
 

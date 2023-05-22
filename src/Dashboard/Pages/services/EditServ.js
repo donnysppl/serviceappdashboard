@@ -7,7 +7,7 @@ import Loader from '../../../Loader';
 
 export default function Edit() {
 
-  const { nodeurl, tokenValue } = Common();
+  const { nodeurl, tokenValue, adminId } = Common();
 
   const { id } = useParams();
 
@@ -33,6 +33,8 @@ export default function Edit() {
   const [loader, setloader] = useState(true);
   const [paymentStatus, setpaymentStatus] = useState(false);
 
+  const [status, setstatus] = useState();
+
   const i = useRef(true);
   useEffect(() => {
     if (i.current) {
@@ -48,7 +50,7 @@ export default function Edit() {
       method: 'GET',
     }).then((res) => res.json())
       .then((res) => {
-        console.log(res);
+        // console.log(res);
         // console.log(res.result.payment_details)
 
         if (res.status === 200) {
@@ -57,7 +59,7 @@ export default function Edit() {
           setwarrType(res.result.warranty);
           setpaymentTb(res.result && res.result.payment_details)
           setuserid(res.result.userId);
-
+          setstatus(res.result.status);
           setloader(false);
 
           if (res.result.invoice.length >= 1) {
@@ -122,7 +124,7 @@ export default function Edit() {
       return parseInt(pre) + parseInt(curr.price)
     }, 0)
     settotal(priceData);
-    console.log(priceData)
+    // console.log(priceData)
 
     const paymentDataSubmit = async () => {
       await fetch(nodeurl + 'admins/paymentupdate/' + id, {
@@ -155,8 +157,10 @@ export default function Edit() {
       /* Read more about isConfirmed, isDenied below */
       if (result.isConfirmed) {
         paymentDataSubmit();
-        Swal.fire('Saved!', '', 'success');
-        setInterval(windowReload, 3000);
+        Swal.fire('Saved!', '', 'success').then(function(){
+          window.location.reload();
+        });
+        
       }
       else if (result.isDenied) {
         Swal.fire('Changes are not saved', '', 'info')
@@ -176,13 +180,15 @@ export default function Edit() {
 
       fetch(nodeurl + `admins/paymentdelete/${paymentId}`, {
         method: 'POST',
+
       })
         .then((res) => {
           // console.log(res);
           if (res.status === 200) {
             alert("Success Deleted");
             thisClicked.closest("tr").remove();
-            setInterval(windowReload, 3000);
+              window.location.reload();
+            
           }
           else if (res.status === 404) {
             alert("Error");
@@ -240,7 +246,39 @@ export default function Edit() {
     window.location.reload();
   }
 
+  const handleInput = async (e) => {
+    setloader(true);
+    const data = {
+      status: e.target.value,
+      adminid: adminId,
+    }
+    await fetch(nodeurl + `admins/servicestatus/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).then(res => res.json())
+      .then(res => {
+        console.log(res);
+        if (res.status === 200) {
+          Swal.fire({
+            icon: 'success',
+            title: res.message,
+            showConfirmButton: false,
+            timer: 1000
+          }).then(function () {
+            window.location.reload();
+          });
+          setloader(false);
 
+        }
+        else {
+          alert(res.message);
+        }
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  }
 
   return (
     <>
@@ -248,7 +286,28 @@ export default function Edit() {
         <div className="container">
           <div className="col-lg-12">
             <div className="wrapper-bg common-bg p-4 rounded-2 position-relative mt-5">
-              <h2>Service Detail</h2>
+              <div className="row align-items-center">
+                <div className="col-lg-8 col-md-6">
+                  <h2>Service Detail</h2>
+                </div>
+                <div className="col-lg-4 col-md-6">
+
+                  <div className="">
+                    <p>
+                    Current Status : <span className={`text-capitalize servicedetail ${servDetail && servDetail.status} `}>{servDetail && servDetail.status}</span>
+                    </p>
+                    
+
+                    <select className="form-select" name="status"
+                      onChange={handleInput} value={servDetail && servDetail.status} >
+                      <option value="initial" >Update Status Request</option>
+                      <option value="pending">pending</option>
+                      <option value="complete">Complete</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               <hr />
 
               {loader ? <Loader /> : null}
@@ -284,7 +343,7 @@ export default function Edit() {
                     <h4 className='mb-3'>Product Invoice and Error Images</h4>
                     <h6>Product Invoice : {invoiceUrl ?
                       <a className='btn btn-primary btn-sm' href={`${nodeurl}${invoiceUrl}`} download>Click Here</a>
-                      : null}
+                      : <span>Data Not Upload</span>}
                     </h6>
 
                     {
@@ -302,11 +361,13 @@ export default function Edit() {
                     <h6>Issue Images : </h6>
                     <ul className='issue-img'>
                       {
-                        issueImg && issueImg.map((item, index) => {
-                          return (
-                            <li key={index}><img src={`${nodeurl}${item.path}`} alt="issue img" className='img-fluid' /></li>
-                          )
-                        })
+                        issueImg ?
+                          issueImg && issueImg.map((item, index) => {
+                            return (
+                              <li key={index}><img src={`${nodeurl}${item.path}`} alt="issue img" className='img-fluid' /></li>
+                            )
+                          })
+                          : <span>Data Not Upload</span>
                       }
                     </ul>
 

@@ -10,7 +10,6 @@ import Loader from "../../../Loader"
 
 export default function Index() {
 
-  const [newSerReqData, setnewSerReqData] = useState();
   const [loader, setloader] = useState(true);
 
   const [totalUser, settotalUser] = useState();
@@ -39,7 +38,6 @@ export default function Index() {
         // console.log(res.result.totalServiceData);
 
         if (res.status === 200) {
-          dataFilter(res.result.totalServiceData);
           settotalUser(res.result.totalAppUserLenght);
           settotalService(res.result.totalServiceDataLenght);
           settotalInstall(res.result.totalInstallDataLenght);
@@ -53,90 +51,7 @@ export default function Index() {
       )
   }
 
-  const newServReqColumns = [
-    {
-      name: 'Complaint Type',
-      selector: row => row.complaint_type,
-      width: 200,
-    },
-    {
-      name: 'Brand',
-      selector: row => row.brand,
-      width: 200,
-    },
-    {
-      name: 'Product Name',
-      selector: row => row.productname,
-      width: 200,
-    },
-    {
-      name: 'Customer Name',
-      selector: row => row.firstname + " " + row.lastname,
-      width: 200,
-    },
-    {
-      name: 'Customer Email',
-      selector: row => row.email,
-      width: 200,
-    },
-    {
-      name: 'Action',
-      cell: (row) => <NavLink to={`/admin/services/${row._id}`}>
-        <button onClick={() => console.log(row._id)} className='btn btn-primary table-btn'>
-          Edit
-        </button></NavLink>
-    }
-  ];
-
-  createTheme('solarized', {
-    text: {
-      primary: '#ffffff',
-      secondary: '#ffffff',
-    },
-    background: {
-      default: 'rgba(0,0,0,0)',
-      text: '#FFFFFF',
-    },
-    context: {
-      background: '#cb4b16',
-      text: '#FFFFFF',
-    },
-    divider: {
-      default: 'rgba(255,255,255,0.25)',
-    },
-    action: {
-      button: 'rgba(0,0,0,.54)',
-      hover: 'rgba(0,0,0,.08)',
-      disabled: 'rgba(0,0,0,.12)',
-    },
-  }, 'dark');
-
-  const customStyles = {
-    headCells: {
-      style: {
-        padding: '10px 10px',
-        background: '#000000',
-      },
-    },
-    cells: {
-      style: {
-        padding: '10px 10px',
-      },
-    },
-
-  };
-
-  const dataFilter = (res) => {
-    const data = res;
-    const dataRev = data.reverse();
-    const dataSlice = dataRev.slice(0, 5);
-    setnewSerReqData(dataSlice);
-    setloader(false)
-
-  }
-
-  // new service request function End
-
+ 
   return (
     <section className='mt-3'>
       <div className="container mt-5">
@@ -174,40 +89,6 @@ export default function Index() {
           </div>
         </div>
       </div>
-
-      <div className="container mt-3">
-        <div className="row">
-          <div className="col-lg-8">
-            <div className="wrapper-bg common-bg rounded-2 position-relative">
-              <div>
-                <h4 className="py-3 px-3 mt-2">New Service Request</h4>
-
-                <DataTable columns={newServReqColumns} data={newSerReqData}
-                  theme="solarized" customStyles={customStyles} progressPending={loader}
-                />
-              </div>
-              <hr />
-              <div className="btn-part text-end pb-3 px-3">
-                <NavLink className="btn btn-primary" to={'/admin/services'}>View All</NavLink>
-              </div>
-
-
-            </div>
-          </div>
-
-          {/* <div className="col-lg-4">
-            <div className="wrapper-bg common-bg rounded-2 p-4 position-relative">
-              <div>
-
-              </div>
-
-
-            </div>
-          </div> */}
-
-        </div>
-      </div>
-
 
     </section>
   )

@@ -35,8 +35,6 @@ export default function Index() {
 
     setdataFilter(result);
 
-    // console.log(search)
-
   }, [search])
 
   const servData = async (e) => {
@@ -47,15 +45,15 @@ export default function Index() {
       headers: { 'Content-Type': 'application/json', 'Authorization': `bearer ${tokenValue}` },
     }
 
-    await fetch(nodeurl + `admins/installation`, requestOptions).then((res) => res.json())
+    await fetch(nodeurl + `admins/warrantydata`, requestOptions).then((res) => res.json())
       .then((res) => {
-        // console.log(res);
+        console.log(res);
 
         if (res.status === 200) {
-          setservList(res.result && res.result.reverse());
+          setservList(res.data && res.data.reverse());
           setloader(false);
-          setdataReverse(res.result && res.result.reverse());
-          setdataFilter(res.result && res.result.reverse());
+          setdataReverse(res.data && res.data.reverse());
+          setdataFilter(res.data && res.data.reverse());
         }
 
         else if (res.status === 400) {
@@ -103,55 +101,57 @@ export default function Index() {
       width: '60px',
     },
     {
-      name: 'Complaint Type',
-      selector: row => (row.complaint_type),
-      cellExport: row => (row.complaint_type),
-      width: '160px',
+      name: 'Customer Name',
+      selector: row => (row.name),
+      cellExport: row => (row.name),
+      
     },
     {
       name: 'Brand',
       selector: row => (row.brand),
       cellExport: row => (row.brand),
-      width: '160px',
-    },
-    {
-      name: 'Product Name',
-      selector: row => (row.productname),
-      cellExport: row => (row.productname),
-      width: '160px',
-    },
-    {
-      name: 'Customer Name',
-      selector: row => (row.firstname + " " + row.lastname),
-      cellExport: row => (row.firstname + " " + row.lastname),
-      width: '160px',
+      
     },
     {
       name: 'Customer Email',
       selector: row => (row.email),
       cellExport: row => (row.email),
-      width: '160px',
+      
     },
     {
-      name: 'Status',
-      selector: row => <>
-        <div className="text-center">
-          <div className={`status me-2 ${row.status}`}>
-            <span>{row.status === 'initial' ? 'New' : row.status}</span>
-          </div>
-        </div>
-      </>,
-      cellExport: row => (row.status),
-      width: '120px',
+      name: 'Customer Mobile no',
+      selector: row => (row.mobile),
+      cellExport: row => (row.mobile),
+      
     },
     {
-      name: 'Action',
-      cell: (row) => <>
-        <button onClick={() => console.log(row._id)} className='btn btn-primary py-1 px-2 table-btn'>
-          <NavLink to={`/admin/installation/${row._id}`}>Edit</NavLink>
-        </button>
-      </>
-    }
+      name: 'Product Category',
+      selector: row => (row.productType),
+      cellExport: row => (row.productType),
+      
+    },
+    {
+        name: 'Product Model',
+        selector: row => (row.productName),
+        cellExport: row => (row.productName),
+        
+    },
+    {
+        name: 'Product Purchase Date',
+        selector: row => (row.purchaseDate),
+        cellExport: row => (row.purchaseDate),
+        
+    },
+    {
+        name: 'Product invoice',
+        selector: row => <>
+            <a className='btn btn-primary btn-sm' href={`${nodeurl + row.invoice[0].path}`}>Click Here</a>
+        </>,
+        cellExport: row => <>
+            <a className='btn btn-primary btn-sm' href={`${nodeurl + row.invoice[0].path}`}>Click Here</a>
+        </>,
+        
+    },
   ];
 
   createTheme('solarized', {
@@ -188,6 +188,7 @@ export default function Index() {
     cells: {
       style: {
         padding: '10px 8px',
+        whiteSpace: 'initial',
       },
     },
 
@@ -229,15 +230,15 @@ export default function Index() {
           <div className="row">
             <div className="col-lg-12">
               <div className="wrapper-bg common-bg p-4 rounded-2 position-relative">
-                <h3 className='fw-semibold'>Installation Request</h3>
-                <div className="table-part table-responsive">
-                  <DataTable theme="solarized" customStyles={customStyles}
-                    data={dataFilter} progressPending={loader}
+                <h3 className='fw-semibold'>Warranty Request</h3>
+                <div className="table-part table-responsive warrenty">
+                  <DataTable className='text-break ' theme="solarized" customStyles={customStyles}
+                    data={dataFilter} progressPending={loader} 
                     columns={columns}
                     pagination highlightOnHover subHeader
                     subHeaderComponent={
                       <div className='w-100 list-heading-part pb-3'>
-                         <div className='text-center'>
+                        <div className='text-center'>
                           {
                             excelDataArray.length ?
                               <CSVLink data={excelDataArray} target="_blank" ><button className='btn btn-primary'>Export Excel</button></CSVLink> : <span>Loading / Click Filter <br/>to Export</span>
@@ -258,7 +259,7 @@ export default function Index() {
                               <option value="all">All</option>
                             </select>
                           </div>
-                          <div className="filter-status">
+                          {/* <div className="filter-status">
                             <label htmlFor="filterbyStatus" className="form-label">Filter By Status</label>
                             <select className="form-select" name='filterbystatus' id='filterbystatus' defaultValue={'all'} >
                               <option value="all">All</option>
@@ -266,7 +267,7 @@ export default function Index() {
                               <option value="pending">Pending</option>
                               <option value="complete">Complete</option>
                             </select>
-                          </div>
+                          </div> */}
                           <button className='btn btn-primary'>Filter</button>
                         </form>
                       </div>

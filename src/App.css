@@ -43,7 +43,9 @@ body {
   width: 100%;
   height: 100vh;
 }
-
+.h-100vh{
+  height: 100vh;
+}
 /* common css */
 .loader {
   position: absolute;
@@ -87,8 +89,8 @@ body {
 
 .login-part {
   width: 100%;
-  min-height: 500px;
-  height: calc(100vh - 50px);
+  min-height: 300px;
+  height: auto;
   margin: 25px 0;
   border-radius: 10px;
   background-color: rgba(255, 255, 255, 0.13);
@@ -306,7 +308,12 @@ tr th {
 .table-btn a:hover {
   color: #fff;
 }
-
+form.fliter-form {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 10px;
+}
 .total-no-div svg {
   width: 100px;
   height: 100px;
@@ -318,14 +325,14 @@ tr th {
 }
 .list-heading-part {
   display: flex;
-  align-items: center;
+  align-items: end;
   justify-content: end;
   gap: 15px;
 }
 .table-part.table-responsive header {
   padding: 0 !important;
 }
-.status{
+.status, .servicedetail{
   height: 24px;
   min-width: 22px;
   line-height: 0;
@@ -340,23 +347,39 @@ tr th {
   font-size: 0.75rem;
   font-weight: 700;
 }
-.status.pending{
+.servicedetail{
+  font-size: 1.2rem;
+  padding: 10px 16px;
+  height: 30px;
+}
+.status.pending , .servicedetail.pending{
   background-color: rgb(255, 171, 0);
   color: rgb(33, 43, 54);
 }
-.status.failed{
+.status.failed, .servicedetail.failed{
   background-color: rgb(255, 86, 48);
   color: #fff;
 }
-.status.complete{
+.status.complete , .servicedetail.complete{
   background-color: rgb(54, 179, 126);
   color: rgb(33, 43, 54);
 }
-.status.new{
+.status.initial, .servicedetail.initial{
   background-color: #dedede;
   color: rgb(33, 43, 54);
 }
 
+.password-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 20px;
+  font-size: 20px;
+}
+/* warrenty */
+.warrenty .rdt_TableCell > div{
+  white-space : normal !important;
+}
 /* media  */
 @media only screen and (max-width: 990px) {
 

@@ -21,13 +21,15 @@ import EditInstall from './Dashboard/Pages/installation/EditInstall';
 import AllUser from './Dashboard/Pages/user/AllUser';
 import Common from './Dashboard/Common';
 import Payment from './Dashboard/Pages/payment';
+import EditUser from './Dashboard/Pages/user/EditUser';
+import UserRecord from './Dashboard/Pages/user/UserRecord';
+import WarrentyInd from './Dashboard/Pages/warrenty/Index';
 
 function App() {
   const navigate = useNavigate();
   const [mainAdmin, setmainAdmin] = useState(false);
   const [servicesAdmin, setservicesAdmin] = useState(false);
   const [installationAdmin, setinstallationAdmin] = useState(false);
-
 
   const { tokenValue , userRoleValue } = Common();
 
@@ -115,7 +117,10 @@ function App() {
           <Route path='/admin/installation' exact element={<InstallUser><Installation /></InstallUser>} />
           <Route path='/admin/installation/:id' exact element={<InstallUser><EditInstall /></InstallUser>} />
           <Route path='/admin/user' exact element={<MainUser><AllUser /></MainUser>} />
+          <Route path='/admin/user-record' exact element={<MainUser><UserRecord /></MainUser>} />
+          <Route path='/admin/user/:id' exact element={<MainUser><EditUser /></MainUser>} />
           <Route path='/admin/payment' exact element={<MainUser><Payment /></MainUser>} />
+          <Route path='/admin/warranty' exact element={<MainUser><WarrentyInd /></MainUser>} />
           <Route
             path="/admin"
             element={<Navigate to="/admin/dashboard" />}
